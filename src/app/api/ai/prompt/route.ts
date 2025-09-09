@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { generatePortfolioAnalysisPrompt, generateStockAnalysisPrompt } from '@/lib/ai-prompts'
+import { getMultiplePrices } from '@/lib/yahoo-finance'
+import { Position } from '@/types'
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,7 +37,23 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'No positions found' }, { status: 400 })
       }
 
-      prompt = generatePortfolioAnalysisPrompt(positions)
+      // Fetch current market prices for all symbols
+      const symbols = positions.map((p: Position) => p.symbol)
+      const marketPrices = await getMultiplePrices(symbols)
+      
+      // Create a map of symbol to price
+      const priceMap = marketPrices.reduce((acc, price) => {
+        acc[price.symbol] = price.price
+        return acc
+      }, {} as Record<string, number>)
+
+      // Enrich positions with current prices
+      const enrichedPositions: Position[] = positions.map((position: Position) => ({
+        ...position,
+        current_price: priceMap[position.symbol] || undefined
+      }))
+
+      prompt = generatePortfolioAnalysisPrompt(enrichedPositions)
       analysisType = 'portfolio_analysis'
 
     } else if (type === 'stock' && symbol && currentPrice) {

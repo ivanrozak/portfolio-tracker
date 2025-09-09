@@ -2,27 +2,38 @@ import { Position } from '@/types'
 
 export function generatePortfolioAnalysisPrompt(positions: Position[]): string {
   const portfolioData = positions.map(position => {
-    const currentValue = position.current_price ? position.current_price * position.quantity : 0
+    const currentPrice = position.current_price
     const costBasis = position.purchase_price * position.quantity
-    const pnl = currentValue - costBasis
-    const pnlPercent = costBasis > 0 ? (pnl / costBasis) * 100 : 0
     
-    return `${position.symbol} (${position.asset_type}): ${position.quantity} shares at $${position.purchase_price} (purchased ${position.purchase_date}), current value: $${currentValue.toFixed(2)}, P&L: ${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)} (${pnlPercent.toFixed(2)}%)`
+    if (currentPrice && currentPrice > 0) {
+      const currentValue = currentPrice * position.quantity
+      const pnl = currentValue - costBasis
+      const pnlPercent = costBasis > 0 ? (pnl / costBasis) * 100 : 0
+      
+      return `${position.symbol} (${position.asset_type}): ${position.quantity} shares at $${position.purchase_price} (purchased ${position.purchase_date}), current price: $${currentPrice.toFixed(2)}, current value: $${currentValue.toFixed(2)}, P&L: ${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)} (${pnlPercent.toFixed(2)}%)`
+    } else {
+      return `${position.symbol} (${position.asset_type}): ${position.quantity} shares at $${position.purchase_price} (purchased ${position.purchase_date}), current price: [Price data unavailable], cost basis: $${costBasis.toFixed(2)}`
+    }
   }).join('\n')
 
   const totalValue = positions.reduce((sum, pos) => 
-    sum + (pos.current_price ? pos.current_price * pos.quantity : 0), 0)
+    sum + (pos.current_price && pos.current_price > 0 ? pos.current_price * pos.quantity : 0), 0)
   const totalCost = positions.reduce((sum, pos) => 
     sum + (pos.purchase_price * pos.quantity), 0)
   const totalPnL = totalValue - totalCost
   const totalPnLPercent = totalCost > 0 ? (totalPnL / totalCost) * 100 : 0
 
+  // Check how many positions have current pricing
+  const positionsWithPricing = positions.filter(pos => pos.current_price && pos.current_price > 0).length
+  const totalPositions = positions.length
+
   return `Please analyze my investment portfolio:
 
 PORTFOLIO OVERVIEW:
-Total Portfolio Value: $${totalValue.toFixed(2)}
+Total Portfolio Value: $${totalValue.toFixed(2)} (${positionsWithPricing}/${totalPositions} positions have current pricing)
 Total Cost Basis: $${totalCost.toFixed(2)}
 Total P&L: ${totalPnL >= 0 ? '+' : ''}$${totalPnL.toFixed(2)} (${totalPnLPercent.toFixed(2)}%)
+${positionsWithPricing < totalPositions ? `\n⚠️  Note: ${totalPositions - positionsWithPricing} position(s) missing current price data - actual values may be higher.` : ''}
 
 INDIVIDUAL POSITIONS:
 ${portfolioData}
