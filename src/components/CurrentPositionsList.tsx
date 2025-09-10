@@ -87,11 +87,11 @@ export default function CurrentPositionsList({ refreshTrigger }: CurrentPosition
     <>
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <CardTitle>Current Positions</CardTitle>
-              <CardDescription className="flex items-center gap-2">
-                <Info className="h-4 w-4" />
+              <CardTitle className="text-lg sm:text-xl">Current Positions</CardTitle>
+              <CardDescription className="flex items-center gap-2 text-xs sm:text-sm">
+                <Info className="h-3 w-3 sm:h-4 sm:w-4" />
                 Based on transaction history with realized P&L tracking
               </CardDescription>
             </div>
@@ -100,25 +100,27 @@ export default function CurrentPositionsList({ refreshTrigger }: CurrentPosition
               size="sm" 
               onClick={fetchCurrentPositions}
               disabled={loading}
+              className="text-xs sm:text-sm"
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-3 w-3 sm:h-4 sm:w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Symbol</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Quantity</TableHead>
-                <TableHead>Avg Cost</TableHead>
-                <TableHead>Current Price</TableHead>
-                <TableHead>Market Value</TableHead>
-                <TableHead>Unrealized P&L</TableHead>
-                <TableHead>Realized P&L</TableHead>
-                <TableHead>Actions</TableHead>
+        <CardContent className="p-3 sm:p-6">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-xs sm:text-sm">Symbol</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Type</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Quantity</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Avg Cost</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Current Price</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Market Value</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Unrealized P&L</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Realized P&L</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -139,7 +141,7 @@ export default function CurrentPositionsList({ refreshTrigger }: CurrentPosition
                   <TableRow key={position.symbol}>
                     <TableCell className="font-medium">
                       <div>
-                        {position.symbol}
+                        <span className="text-xs sm:text-sm font-medium">{position.symbol}</span>
                         {position.currency !== 'USD' && (
                           <div className="text-xs text-gray-500">
                             {formatCurrency(position.current_price || 0, position.currency)}
@@ -148,12 +150,12 @@ export default function CurrentPositionsList({ refreshTrigger }: CurrentPosition
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={position.asset_type === 'stock' ? 'default' : 'secondary'}>
+                      <Badge variant={position.asset_type === 'stock' ? 'default' : 'secondary'} className="text-xs">
                         {position.asset_type}
                       </Badge>
                     </TableCell>
-                    <TableCell>{position.current_quantity.toLocaleString()}</TableCell>
-                    <TableCell>
+                    <TableCell className="text-xs sm:text-sm">{position.current_quantity.toLocaleString()}</TableCell>
+                    <TableCell className="text-xs sm:text-sm">
                       {formatCurrency(displayAvgCost, displayCurrency)}
                       {position.currency !== 'USD' && position.usd_equivalent && (
                         <div className="text-xs text-gray-500">
@@ -161,10 +163,10 @@ export default function CurrentPositionsList({ refreshTrigger }: CurrentPosition
                         </div>
                       )}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-xs sm:text-sm">
                       {displayCurrentPrice > 0 ? (
                         <div>
-                          {formatCurrency(displayCurrentPrice, displayCurrency)}
+                          <span className="text-xs sm:text-sm">{formatCurrency(displayCurrentPrice, displayCurrency)}</span>
                           {position.currency !== 'USD' && position.usd_equivalent && (
                             <div className="text-xs text-gray-500">
                               {formatCurrency(position.current_price || 0, position.currency)}
@@ -175,22 +177,22 @@ export default function CurrentPositionsList({ refreshTrigger }: CurrentPosition
                         <span className="text-gray-400">-</span>
                       )}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-xs sm:text-sm">
                       {marketValue > 0 ? formatCurrency(marketValue, displayCurrency) : '-'}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-xs sm:text-sm">
                       {marketValue > 0 ? (
                         <div className={`flex flex-col ${unrealizedPnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          <span>{unrealizedPnl >= 0 ? '+' : ''}{formatCurrency(Math.abs(unrealizedPnl), displayCurrency)}</span>
+                          <span className="text-xs sm:text-sm">{unrealizedPnl >= 0 ? '+' : ''}{formatCurrency(Math.abs(unrealizedPnl), displayCurrency)}</span>
                           <span className="text-xs">({unrealizedPnl >= 0 ? '+' : ''}{unrealizedPnlPercent.toFixed(2)}%)</span>
                         </div>
                       ) : (
                         <span className="text-gray-400">-</span>
                       )}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-xs sm:text-sm">
                       {realizedPnl !== 0 ? (
-                        <span className={realizedPnl >= 0 ? 'text-green-600' : 'text-red-600'}>
+                        <span className={`text-xs sm:text-sm ${realizedPnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                           {realizedPnl >= 0 ? '+' : ''}{formatCurrency(Math.abs(realizedPnl), position.currency)}
                         </span>
                       ) : (
@@ -202,17 +204,18 @@ export default function CurrentPositionsList({ refreshTrigger }: CurrentPosition
                         variant="outline"
                         size="sm"
                         onClick={() => handleSellClick(position)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs sm:text-sm"
                       >
-                        <Minus className="h-4 w-4 mr-1" />
-                        Sell
+                        <Minus className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+                        <span className="hidden sm:inline">Sell</span>
                       </Button>
                     </TableCell>
                   </TableRow>
                 )
               })}
             </TableBody>
-          </Table>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 

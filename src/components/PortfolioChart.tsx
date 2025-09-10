@@ -167,7 +167,7 @@ export default function PortfolioChart({ refreshTrigger }: PortfolioChartProps) 
     switch (chartType) {
       case 'allocation':
         return (
-          <ResponsiveContainer width="100%" height={350}>
+          <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
                 data={allocationData}
@@ -204,7 +204,7 @@ export default function PortfolioChart({ refreshTrigger }: PortfolioChartProps) 
       
       case 'performance':
         return (
-          <ResponsiveContainer width="100%" height={350}>
+          <ResponsiveContainer width="100%" height={300}>
             <BarChart data={performanceData} margin={{ top: 5, right: 30, left: 20, bottom: 50 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis 
@@ -243,7 +243,7 @@ export default function PortfolioChart({ refreshTrigger }: PortfolioChartProps) 
       
       case 'timeline':
         return (
-          <ResponsiveContainer width="100%" height={350}>
+          <ResponsiveContainer width="100%" height={300}>
             <LineChart data={timelineData} margin={{ top: 5, right: 30, left: 20, bottom: 50 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis 
@@ -287,20 +287,21 @@ export default function PortfolioChart({ refreshTrigger }: PortfolioChartProps) 
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <CardTitle>Portfolio Charts</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-lg sm:text-xl">Portfolio Charts</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">
               {chartType === 'allocation' && 'Distribution by current market value (USD)'}
               {chartType === 'performance' && 'Profit/Loss percentage by position (USD)'}
               {chartType === 'timeline' && 'Investment and realized gains over time (USD)'}
             </CardDescription>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-1 sm:gap-2 flex-wrap">
             <Button
               variant={chartType === 'allocation' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setChartType('allocation')}
+              className="text-xs sm:text-sm"
             >
               Allocation
             </Button>
@@ -308,6 +309,7 @@ export default function PortfolioChart({ refreshTrigger }: PortfolioChartProps) 
               variant={chartType === 'performance' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setChartType('performance')}
+              className="text-xs sm:text-sm"
             >
               Performance
             </Button>
@@ -315,13 +317,14 @@ export default function PortfolioChart({ refreshTrigger }: PortfolioChartProps) 
               variant={chartType === 'timeline' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setChartType('timeline')}
+              className="text-xs sm:text-sm"
             >
               Timeline
             </Button>
           </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-3 sm:p-6">
         {renderChart()}
       </CardContent>
     </Card>

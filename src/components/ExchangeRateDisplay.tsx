@@ -75,10 +75,10 @@ export default function ExchangeRateDisplay() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <CardTitle className="text-lg">Live Exchange Rates</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-base sm:text-lg">Live Exchange Rates</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">
               Real-time USD ↔ IDR exchange rates
               {lastUpdated && <span className="block text-xs mt-1">Last updated: {lastUpdated}</span>}
             </CardDescription>
@@ -88,14 +88,15 @@ export default function ExchangeRateDisplay() {
             size="sm"
             onClick={refreshRates}
             disabled={loading}
+            className="text-xs sm:text-sm"
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-3 w-3 sm:h-4 sm:w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <CardContent className="p-3 sm:p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           {exchangeRates.map((rate) => {
             const isUsdToIdr = rate.from_currency === 'USD'
             const displayRate = rate.rate
@@ -106,28 +107,28 @@ export default function ExchangeRateDisplay() {
             return (
               <div 
                 key={`${rate.from_currency}-${rate.to_currency}`}
-                className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border"
+                className="p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="font-mono">
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    <Badge variant="secondary" className="font-mono text-xs">
                       {rate.from_currency}
                     </Badge>
-                    <span className="text-gray-400">→</span>
-                    <Badge variant="secondary" className="font-mono">
+                    <span className="text-gray-400 text-sm">→</span>
+                    <Badge variant="secondary" className="font-mono text-xs">
                       {rate.to_currency}
                     </Badge>
                   </div>
-                  <Badge variant="outline" className="text-green-600">
+                  <Badge variant="outline" className="text-green-600 text-xs">
                     LIVE
                   </Badge>
                 </div>
                 
-                <div className="text-2xl font-bold text-gray-900">
+                <div className="text-lg sm:text-2xl font-bold text-gray-900">
                   {formattedRate}
                 </div>
                 
-                <div className="text-sm text-gray-600 mt-1">
+                <div className="text-xs sm:text-sm text-gray-600 mt-1">
                   1 {rate.from_currency} = {formattedRate}
                 </div>
                 
@@ -139,8 +140,8 @@ export default function ExchangeRateDisplay() {
           })}
         </div>
 
-        <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-          <div className="text-sm text-yellow-800">
+        <div className="mt-3 sm:mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+          <div className="text-xs sm:text-sm text-yellow-800">
             <strong>💡 Note:</strong> Exchange rates are fetched from a real-time API and cached for 10 minutes. 
             All portfolio calculations automatically use the latest rates for accurate USD conversion.
           </div>

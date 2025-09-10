@@ -142,27 +142,27 @@ export default function TransactionForm({ onSuccess, prefilledPosition }: Transa
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
           {transactionType === 'buy' ? (
             <>
-              <PlusCircle className="h-5 w-5 text-green-600" />
+              <PlusCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
               Buy {transactionType === 'buy' && symbol ? symbol : 'Assets'}
             </>
           ) : (
             <>
-              <Minus className="h-5 w-5 text-red-600" />
+              <Minus className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
               Sell {transactionType === 'sell' && symbol ? symbol : 'Assets'}
             </>
           )}
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-xs sm:text-sm">
           {transactionType === 'buy' 
             ? 'Add a new buy transaction to your portfolio'
             : 'Sell existing shares and realize gains/losses'
           }
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-3 sm:p-6">
         {currentPosition && transactionType === 'sell' && (
           <div className="mb-4 p-3 bg-blue-50 rounded-lg">
             <h4 className="font-medium text-blue-900 mb-2">Current Position</h4>
@@ -178,14 +178,14 @@ export default function TransactionForm({ onSuccess, prefilledPosition }: Transa
         )}
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 sm:space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <FormField
                 control={form.control}
                 name="transactionType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Transaction Type</FormLabel>
+                    <FormLabel className="text-xs sm:text-sm">Transaction Type</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
@@ -206,7 +206,7 @@ export default function TransactionForm({ onSuccess, prefilledPosition }: Transa
                 name="symbol"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Symbol</FormLabel>
+                    <FormLabel className="text-xs sm:text-sm">Symbol</FormLabel>
                     <FormControl>
                       <Input 
                         placeholder="AAPL, BBCA.JK, BTC, etc." 
@@ -227,7 +227,7 @@ export default function TransactionForm({ onSuccess, prefilledPosition }: Transa
                 name="assetType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Asset Type</FormLabel>
+                    <FormLabel className="text-xs sm:text-sm">Asset Type</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
@@ -248,7 +248,7 @@ export default function TransactionForm({ onSuccess, prefilledPosition }: Transa
                 name="currency"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Currency</FormLabel>
+                    <FormLabel className="text-xs sm:text-sm">Currency</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
@@ -272,7 +272,7 @@ export default function TransactionForm({ onSuccess, prefilledPosition }: Transa
                 name="quantity"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Quantity</FormLabel>
+                    <FormLabel className="text-xs sm:text-sm">Quantity</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
@@ -296,7 +296,7 @@ export default function TransactionForm({ onSuccess, prefilledPosition }: Transa
                 name="price"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Price per Share</FormLabel>
+                    <FormLabel className="text-xs sm:text-sm">Price per Share</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
@@ -331,7 +331,7 @@ export default function TransactionForm({ onSuccess, prefilledPosition }: Transa
               name="transactionDate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Transaction Date</FormLabel>
+                  <FormLabel className="text-xs sm:text-sm">Transaction Date</FormLabel>
                   <FormControl>
                     <Input type="date" {...field} />
                   </FormControl>
@@ -345,7 +345,7 @@ export default function TransactionForm({ onSuccess, prefilledPosition }: Transa
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Notes (Optional)</FormLabel>
+                  <FormLabel className="text-xs sm:text-sm">Notes (Optional)</FormLabel>
                   <FormControl>
                     <Textarea 
                       placeholder="Add any additional notes about this transaction..."
@@ -363,7 +363,7 @@ export default function TransactionForm({ onSuccess, prefilledPosition }: Transa
               </div>
             )}
 
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full text-sm sm:text-base" disabled={loading}>
               {loading 
                 ? `${transactionType === 'buy' ? 'Adding' : 'Selling'}...` 
                 : `${transactionType === 'buy' ? 'Add Buy' : 'Sell'} Transaction`

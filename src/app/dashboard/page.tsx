@@ -35,51 +35,62 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+        <div className="container mx-auto px-3 sm:px-4 py-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Portfolio Tracker</h1>
-              <p className="text-gray-600">Track your investments and get AI-powered insights</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Portfolio Tracker</h1>
+              <p className="text-sm sm:text-base text-gray-600">Track your investments and get AI-powered insights</p>
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <Button
-                variant={viewMode === 'current' ? "default" : "outline"}
-                onClick={() => setViewMode('current')}
-                size="sm"
-              >
-                Current Positions
-              </Button>
-              <Button
-                variant={viewMode === 'aggregated' ? "default" : "outline"}
-                onClick={() => setViewMode('aggregated')}
-                size="sm"
-              >
-                Aggregated View
-              </Button>
-              <Button
-                variant={viewMode === 'individual' ? "default" : "outline"}
-                onClick={() => setViewMode('individual')}
-                size="sm"
-              >
-                Individual Trades
-              </Button>
-              <Button
-                onClick={() => setShowAddTransaction(!showAddTransaction)}
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Add Transaction
-              </Button>
-              <Button variant="outline" onClick={handleLogout}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </Button>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-wrap">
+              {/* View Mode Buttons */}
+              <div className="flex flex-wrap gap-1 sm:gap-2">
+                <Button
+                  variant={viewMode === 'current' ? "default" : "outline"}
+                  onClick={() => setViewMode('current')}
+                  size="sm"
+                  className="text-xs sm:text-sm"
+                >
+                  Current
+                </Button>
+                <Button
+                  variant={viewMode === 'aggregated' ? "default" : "outline"}
+                  onClick={() => setViewMode('aggregated')}
+                  size="sm"
+                  className="text-xs sm:text-sm"
+                >
+                  Aggregated
+                </Button>
+                <Button
+                  variant={viewMode === 'individual' ? "default" : "outline"}
+                  onClick={() => setViewMode('individual')}
+                  size="sm"
+                  className="text-xs sm:text-sm"
+                >
+                  Individual
+                </Button>
+              </div>
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => setShowAddTransaction(!showAddTransaction)}
+                  className="flex items-center gap-2 text-xs sm:text-sm"
+                  size="sm"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden sm:inline">Add Transaction</span>
+                  <span className="sm:hidden">Add</span>
+                </Button>
+                <Button variant="outline" onClick={handleLogout} size="sm" className="text-xs sm:text-sm">
+                  <LogOut className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Sign Out</span>
+                </Button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6 space-y-6">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
         {/* Portfolio Summary Cards */}
         <PortfolioSummary refreshTrigger={refreshTrigger} />
 

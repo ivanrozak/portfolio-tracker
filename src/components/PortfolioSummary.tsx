@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { CurrentPosition, PortfolioSummary as PortfolioSummaryType } from '@/types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TrendingUp, TrendingDown, DollarSign, Target, Award } from 'lucide-react'
+import { getDisplayExchangeRate } from '@/lib/currency-conversion'
 
 interface PortfolioSummaryProps {
   refreshTrigger?: number
@@ -76,13 +77,14 @@ export default function PortfolioSummary({ refreshTrigger }: PortfolioSummaryPro
 
   if (loading) {
     return (
-      <div className="grid gap-4 md:grid-cols-4 mb-6">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-6">
         {[...Array(4)].map((_, i) => (
           <Card key={i}>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="animate-pulse">
                 <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                <div className="h-8 bg-gray-200 rounded"></div>
+                <div className="h-6 sm:h-8 bg-gray-200 rounded mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
               </div>
             </CardContent>
           </Card>
@@ -95,49 +97,59 @@ export default function PortfolioSummary({ refreshTrigger }: PortfolioSummaryPro
     return null
   }
 
+  // Get USD to IDR exchange rate for display
+  const usdToIdrRate = getDisplayExchangeRate('USD', 'IDR')
+  
   const summaryCards = [
     {
       title: 'Portfolio Value',
       value: `$${summary.total_value.toFixed(2)}`,
+      idrValue: `Rp ${(summary.total_value * usdToIdrRate).toLocaleString('id-ID', { maximumFractionDigits: 0 })}`,
       icon: DollarSign,
-      description: 'Current market value (USD)',
+      description: 'Current market value',
       subtext: 'Multi-currency converted'
     },
     {
       title: 'Cost Basis',
       value: `$${summary.total_cost.toFixed(2)}`,
+      idrValue: `Rp ${(summary.total_cost * usdToIdrRate).toLocaleString('id-ID', { maximumFractionDigits: 0 })}`,
       icon: Target,
-      description: 'Total amount invested (USD)'
+      description: 'Total amount invested'
     },
     {
       title: 'Unrealized P&L',
       value: `${summary.total_pnl >= 0 ? '+' : ''}$${Math.abs(summary.total_pnl).toFixed(2)}`,
+      idrValue: `${summary.total_pnl >= 0 ? '+' : ''}Rp ${Math.abs(summary.total_pnl * usdToIdrRate).toLocaleString('id-ID', { maximumFractionDigits: 0 })}`,
       icon: summary.total_pnl >= 0 ? TrendingUp : TrendingDown,
-      description: 'Paper gains/losses (USD)',
+      description: 'Paper gains/losses',
       color: summary.total_pnl >= 0 ? 'text-green-600' : 'text-red-600',
       subtext: `${summary.total_pnl >= 0 ? '+' : ''}${summary.total_pnl_percentage.toFixed(2)}%`
     },
     {
       title: 'Realized P&L',
       value: `${realizedPnL >= 0 ? '+' : ''}$${Math.abs(realizedPnL).toFixed(2)}`,
+      idrValue: `${realizedPnL >= 0 ? '+' : ''}Rp ${Math.abs(realizedPnL * usdToIdrRate).toLocaleString('id-ID', { maximumFractionDigits: 0 })}`,
       icon: Award,
-      description: 'From completed sales (USD)',
+      description: 'From completed sales',
       color: realizedPnL >= 0 ? 'text-green-600' : 'text-red-600',
       subtext: realizedPnL !== 0 ? 'From sell transactions' : 'No sales yet'
     }
   ]
 
   return (
-    <div className="grid gap-4 md:grid-cols-4 mb-6">
+    <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-6">
       {summaryCards.map((card, index) => (
         <Card key={index}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-medium">{card.title}</CardTitle>
             <card.icon className={`h-4 w-4 ${card.color || 'text-muted-foreground'}`} />
           </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${card.color || ''}`}>
+          <CardContent className="pb-4">
+            <div className={`text-lg sm:text-2xl font-bold ${card.color || ''} mb-1`}>
               {card.value}
+            </div>
+            <div className={`text-sm sm:text-base font-medium ${card.color || 'text-gray-600'} mb-2`}>
+              {card.idrValue}
             </div>
             <p className="text-xs text-muted-foreground">
               {card.description}
