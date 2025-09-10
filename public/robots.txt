@@ -1,0 +1,53 @@
+# Portfolio Tracker - Investment Management Platform
+# https://portfoliotracker.com/robots.txt
+
+User-agent: *
+Allow: /
+
+# Allow access to all assets
+Allow: /_next/static/
+Allow: /api/health
+Allow: /favicon.ico
+Allow: /manifest.json
+Allow: /sitemap.xml
+
+# Disallow private/admin areas
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /admin/
+Disallow: /_next/
+Disallow: /private/
+
+# Allow public pages
+Allow: /
+Allow: /login
+Allow: /signup
+Allow: /about
+Allow: /privacy
+Allow: /terms
+
+# Crawl-delay for respectful crawling
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://portfoliotracker.com/sitemap.xml
+
+# Google-specific directives
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
+# Bing-specific directives
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+# Block bad bots
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
