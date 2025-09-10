@@ -8,14 +8,17 @@ import PortfolioSummary from '@/components/PortfolioSummary'
 import AddPosition from '@/components/AddPosition'
 import PositionsList from '@/components/PositionsList'
 import AggregatedPositionsList from '@/components/AggregatedPositionsList'
+import TransactionForm from '@/components/TransactionForm'
+import CurrentPositionsList from '@/components/CurrentPositionsList'
 import PortfolioChart from '@/components/PortfolioChart'
 import AIAnalysis from '@/components/AIAnalysis'
+import ExchangeRateDisplay from '@/components/ExchangeRateDisplay'
 import { LogOut, Plus } from 'lucide-react'
 
 export default function Dashboard() {
   const [refreshTrigger, setRefreshTrigger] = useState(0)
-  const [showAddPosition, setShowAddPosition] = useState(false)
-  const [showAggregated, setShowAggregated] = useState(true)
+  const [showAddTransaction, setShowAddTransaction] = useState(false)
+  const [viewMode, setViewMode] = useState<'current' | 'aggregated' | 'individual'>('current')
   const router = useRouter()
   const supabase = createClient()
 
@@ -25,9 +28,9 @@ export default function Dashboard() {
     router.refresh()
   }
 
-  const handlePositionAdded = () => {
+  const handleTransactionAdded = () => {
     setRefreshTrigger(prev => prev + 1)
-    setShowAddPosition(false)
+    setShowAddTransaction(false)
   }
 
   return (
@@ -39,27 +42,34 @@ export default function Dashboard() {
               <h1 className="text-2xl font-bold text-gray-900">Portfolio Tracker</h1>
               <p className="text-gray-600">Track your investments and get AI-powered insights</p>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 flex-wrap">
               <Button
-                variant={showAggregated ? "default" : "outline"}
-                onClick={() => setShowAggregated(true)}
+                variant={viewMode === 'current' ? "default" : "outline"}
+                onClick={() => setViewMode('current')}
+                size="sm"
+              >
+                Current Positions
+              </Button>
+              <Button
+                variant={viewMode === 'aggregated' ? "default" : "outline"}
+                onClick={() => setViewMode('aggregated')}
                 size="sm"
               >
                 Aggregated View
               </Button>
               <Button
-                variant={!showAggregated ? "default" : "outline"}
-                onClick={() => setShowAggregated(false)}
+                variant={viewMode === 'individual' ? "default" : "outline"}
+                onClick={() => setViewMode('individual')}
                 size="sm"
               >
                 Individual Trades
               </Button>
               <Button
-                onClick={() => setShowAddPosition(!showAddPosition)}
+                onClick={() => setShowAddTransaction(!showAddTransaction)}
                 className="flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
-                Add Position
+                Add Transaction
               </Button>
               <Button variant="outline" onClick={handleLogout}>
                 <LogOut className="h-4 w-4 mr-2" />
@@ -74,20 +84,27 @@ export default function Dashboard() {
         {/* Portfolio Summary Cards */}
         <PortfolioSummary refreshTrigger={refreshTrigger} />
 
-        {/* Add Position Form */}
-        {showAddPosition && (
-          <AddPosition onSuccess={handlePositionAdded} />
+        {/* Add Transaction Form */}
+        {showAddTransaction && (
+          <TransactionForm onSuccess={handleTransactionAdded} />
         )}
 
         {/* Charts Section */}
-        <PortfolioChart refreshTrigger={refreshTrigger} />
+        <PortfolioChart refreshTrigger={refreshTrigger} useAggregated={viewMode === 'aggregated'} />
 
         {/* Positions List */}
-        {showAggregated ? (
+        {viewMode === 'current' && (
+          <CurrentPositionsList refreshTrigger={refreshTrigger} />
+        )}
+        {viewMode === 'aggregated' && (
           <AggregatedPositionsList refreshTrigger={refreshTrigger} />
-        ) : (
+        )}
+        {viewMode === 'individual' && (
           <PositionsList refreshTrigger={refreshTrigger} />
         )}
+
+        {/* Exchange Rate Display */}
+        <ExchangeRateDisplay />
 
         {/* AI Analysis Section */}
         <AIAnalysis />

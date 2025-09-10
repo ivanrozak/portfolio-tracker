@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { AggregatedPosition, MarketPrice, PortfolioSummary as PortfolioSummaryType } from '@/types'
+import { CurrentPosition, Transaction, PortfolioSummary as PortfolioSummaryType } from '@/types'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { TrendingUp, TrendingDown, DollarSign, PieChart } from 'lucide-react'
+import { TrendingUp, TrendingDown, DollarSign, PieChart, Target, Award } from 'lucide-react'
 import { formatCurrency } from '@/lib/currency'
 
 interface PortfolioSummaryProps {
@@ -12,6 +12,7 @@ interface PortfolioSummaryProps {
 
 export default function PortfolioSummary({ refreshTrigger }: PortfolioSummaryProps) {
   const [summary, setSummary] = useState<PortfolioSummaryType | null>(null)
+  const [realizedPnL, setRealizedPnL] = useState(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -20,12 +21,12 @@ export default function PortfolioSummary({ refreshTrigger }: PortfolioSummaryPro
 
   const fetchPortfolioData = async () => {
     try {
-      // Fetch aggregated positions
-      const positionsResponse = await fetch('/api/positions/aggregated')
+      // Fetch current positions (transaction-based)
+      const positionsResponse = await fetch('/api/positions/current')
       if (!positionsResponse.ok) return
       
       const positionsData = await positionsResponse.json()
-      const positions: AggregatedPosition[] = positionsData.aggregatedPositions || []
+      const positions: CurrentPosition[] = positionsData.currentPositions || []
       
       if (positions.length === 0) {
         setSummary({
@@ -34,41 +35,38 @@ export default function PortfolioSummary({ refreshTrigger }: PortfolioSummaryPro
           total_pnl: 0,
           total_pnl_percentage: 0
         })
+        setRealizedPnL(0)
         setLoading(false)
         return
       }
 
-      // Fetch current prices
-      const symbols = positions.map(p => p.symbol)
-      const pricesResponse = await fetch(`/api/market/prices?symbols=${symbols.join(',')}`)
-      
-      let prices: Record<string, MarketPrice> = {}
-      if (pricesResponse.ok) {
-        const pricesData = await pricesResponse.json()
-        pricesData.prices?.forEach((price: MarketPrice) => {
-          prices[price.symbol] = price
-        })
-      }
-
-      // Calculate summary with currency conversion (simplified - assume same base currency for now)
+      // Calculate summary in USD (using USD equivalents when available)
       let totalValue = 0
       let totalCost = 0
+      let totalRealizedPnL = 0
 
       positions.forEach(position => {
-        const currentPrice = prices[position.symbol]?.price || 0
-        totalValue += currentPrice * position.total_quantity
-        totalCost += position.total_cost
+        // Use USD equivalent if available, otherwise original currency
+        const marketValue = position.usd_equivalent?.market_value || 
+          ((position.current_price || 0) * position.current_quantity)
+        const costBasis = position.usd_equivalent?.total_cost_basis || 
+          position.total_cost_basis
+        
+        totalValue += marketValue
+        totalCost += costBasis
+        totalRealizedPnL += position.total_realized_pnl || 0
       })
 
-      const totalPnL = totalValue - totalCost
-      const totalPnLPercent = totalCost > 0 ? (totalPnL / totalCost) * 100 : 0
+      const totalUnrealizedPnL = totalValue - totalCost
+      const totalPnLPercent = totalCost > 0 ? (totalUnrealizedPnL / totalCost) * 100 : 0
 
       setSummary({
         total_value: totalValue,
         total_cost: totalCost,
-        total_pnl: totalPnL,
+        total_pnl: totalUnrealizedPnL,
         total_pnl_percentage: totalPnLPercent
       })
+      setRealizedPnL(totalRealizedPnL)
 
     } catch (err) {
       console.error('Failed to fetch portfolio data:', err)
@@ -100,30 +98,33 @@ export default function PortfolioSummary({ refreshTrigger }: PortfolioSummaryPro
 
   const summaryCards = [
     {
-      title: 'Total Value',
+      title: 'Portfolio Value',
       value: `$${summary.total_value.toFixed(2)}`,
       icon: DollarSign,
-      description: 'Current portfolio value'
+      description: 'Current market value (USD)',
+      subtext: 'Multi-currency converted'
     },
     {
-      title: 'Total Cost',
+      title: 'Cost Basis',
       value: `$${summary.total_cost.toFixed(2)}`,
-      icon: PieChart,
-      description: 'Total amount invested'
+      icon: Target,
+      description: 'Total amount invested (USD)'
     },
     {
-      title: 'Total P&L',
-      value: `${summary.total_pnl >= 0 ? '+' : ''}$${summary.total_pnl.toFixed(2)}`,
+      title: 'Unrealized P&L',
+      value: `${summary.total_pnl >= 0 ? '+' : ''}$${Math.abs(summary.total_pnl).toFixed(2)}`,
       icon: summary.total_pnl >= 0 ? TrendingUp : TrendingDown,
-      description: 'Unrealized gains/losses',
-      color: summary.total_pnl >= 0 ? 'text-green-600' : 'text-red-600'
+      description: 'Paper gains/losses (USD)',
+      color: summary.total_pnl >= 0 ? 'text-green-600' : 'text-red-600',
+      subtext: `${summary.total_pnl >= 0 ? '+' : ''}${summary.total_pnl_percentage.toFixed(2)}%`
     },
     {
-      title: 'Total Return',
-      value: `${summary.total_pnl_percentage >= 0 ? '+' : ''}${summary.total_pnl_percentage.toFixed(2)}%`,
-      icon: summary.total_pnl_percentage >= 0 ? TrendingUp : TrendingDown,
-      description: 'Percentage return',
-      color: summary.total_pnl_percentage >= 0 ? 'text-green-600' : 'text-red-600'
+      title: 'Realized P&L',
+      value: `${realizedPnL >= 0 ? '+' : ''}$${Math.abs(realizedPnL).toFixed(2)}`,
+      icon: Award,
+      description: 'From completed sales (USD)',
+      color: realizedPnL >= 0 ? 'text-green-600' : 'text-red-600',
+      subtext: realizedPnL !== 0 ? 'From sell transactions' : 'No sales yet'
     }
   ]
 
@@ -142,6 +143,11 @@ export default function PortfolioSummary({ refreshTrigger }: PortfolioSummaryPro
             <p className="text-xs text-muted-foreground">
               {card.description}
             </p>
+            {card.subtext && (
+              <p className={`text-xs font-medium mt-1 ${card.color || 'text-gray-500'}`}>
+                {card.subtext}
+              </p>
+            )}
           </CardContent>
         </Card>
       ))}
