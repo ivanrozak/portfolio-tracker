@@ -1,13 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Position, MarketPrice, CurrentPosition, Transaction } from '@/types'
+import { CurrentPosition, Transaction } from '@/types'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts'
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts'
 import { formatCurrency } from '@/lib/currency'
-import { convertToUSD } from '@/lib/currency-conversion'
-import { TrendingUp, TrendingDown, BarChart3 } from 'lucide-react'
 
 interface PortfolioChartProps {
   refreshTrigger?: number
@@ -16,10 +14,9 @@ interface PortfolioChartProps {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#ff7c7c']
 
-export default function PortfolioChart({ refreshTrigger, useAggregated = true }: PortfolioChartProps) {
+export default function PortfolioChart({ refreshTrigger }: PortfolioChartProps) {
   const [positions, setPositions] = useState<CurrentPosition[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [prices, setPrices] = useState<Record<string, MarketPrice>>({})
   const [loading, setLoading] = useState(true)
   const [chartType, setChartType] = useState<'allocation' | 'performance' | 'timeline'>('allocation')
 
@@ -50,18 +47,7 @@ export default function PortfolioChart({ refreshTrigger, useAggregated = true }:
       }
 
       // Prices are already included in current positions
-      // But we can still fetch for additional metadata if needed
-      const symbols = fetchedPositions.map(p => p.symbol)
-      const pricesResponse = await fetch(`/api/market/prices?symbols=${symbols.join(',')}`)
-      
-      if (pricesResponse.ok) {
-        const pricesData = await pricesResponse.json()
-        const pricesMap: Record<string, MarketPrice> = {}
-        pricesData.prices?.forEach((price: MarketPrice) => {
-          pricesMap[price.symbol] = price
-        })
-        setPrices(pricesMap)
-      }
+      // Current positions already include current prices, so no need to fetch separately
 
     } catch (err) {
       console.error('Failed to fetch data for charts:', err)
@@ -189,19 +175,20 @@ export default function PortfolioChart({ refreshTrigger, useAggregated = true }:
                 cy="50%"
                 labelLine={false}
                 label={({ name, value }) => {
-                  const percentage = ((value / totalPortfolioValue) * 100).toFixed(1)
+                  const numValue = typeof value === 'number' ? value : 0
+                  const percentage = ((numValue / totalPortfolioValue) * 100).toFixed(1)
                   return `${name} ${percentage}%`
                 }}
                 outerRadius={100}
                 fill="#8884d8"
                 dataKey="value"
               >
-                {allocationData.map((entry, index) => (
+                {allocationData.map((_, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
               <Tooltip 
-                formatter={(value: number, name, props: any) => [
+                formatter={(value: number, _: string, props: { payload?: { currency?: string; originalValue?: number } }) => [
                   `$${value.toFixed(2)} USD`,
                   'Value',
                   props.payload?.currency !== 'USD' && (

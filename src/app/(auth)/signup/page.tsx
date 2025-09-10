@@ -68,7 +68,7 @@ export default function SignUpPage() {
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">Check your email</CardTitle>
             <CardDescription className="text-center">
-              We've sent you a confirmation link at {email}
+              We&apos;ve sent you a confirmation link at {email}
             </CardDescription>
           </CardHeader>
           <CardContent>

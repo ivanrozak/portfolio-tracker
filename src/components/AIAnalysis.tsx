@@ -53,7 +53,7 @@ export default function AIAnalysis() {
 
   const saveAnalysisResult = async () => {
     if (!analysisId || !analysisResult.trim()) {
-      alert('Please paste Claude\'s response before saving')
+      alert('Please paste Claude&apos;s response before saving')
       return
     }
 
@@ -148,16 +148,16 @@ export default function AIAnalysis() {
             <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
               <h4 className="font-medium text-blue-900 mb-2">How to use:</h4>
               <ol className="text-sm text-blue-800 space-y-1">
-                <li>1. Click "Copy" to copy the prompt above</li>
+                <li>1. Click &quot;Copy&quot; to copy the prompt above</li>
                 <li>2. Open Claude Pro in a new tab</li>
                 <li>3. Paste and send the prompt to Claude Pro</li>
-                <li>4. Copy Claude's response and paste it below</li>
-                <li>5. Click "Save Analysis" to store the results</li>
+                <li>4. Copy Claude&apos;s response and paste it below</li>
+                <li>5. Click &quot;Save Analysis&quot; to store the results</li>
               </ol>
             </div>
 
             <div>
-              <h4 className="text-sm font-medium mb-2">Paste Claude's Response:</h4>
+              <h4 className="text-sm font-medium mb-2">Paste Claude&apos;s Response:</h4>
               <Textarea
                 value={analysisResult}
                 onChange={(e) => setAnalysisResult(e.target.value)}

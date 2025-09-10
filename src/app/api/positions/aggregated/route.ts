@@ -52,23 +52,24 @@ export async function GET() {
 
     // Calculate aggregated positions
     const aggregatedPositions: AggregatedPosition[] = Object.entries(symbolGroups).map(([symbol, symbolPositions]) => {
-      const totalQuantity = symbolPositions.reduce((sum, pos) => sum + pos.quantity, 0)
-      const totalCost = symbolPositions.reduce((sum, pos) => sum + (pos.quantity * pos.purchase_price), 0)
+      const positionsArray = symbolPositions as Position[]
+      const totalQuantity = positionsArray.reduce((sum, pos) => sum + pos.quantity, 0)
+      const totalCost = positionsArray.reduce((sum, pos) => sum + (pos.quantity * pos.purchase_price), 0)
       const averagePrice = totalCost / totalQuantity
       
-      const sortedByDate = symbolPositions.sort((a, b) => 
+      const sortedByDate = positionsArray.sort((a, b) => 
         new Date(a.purchase_date).getTime() - new Date(b.purchase_date).getTime()
       )
       
       return {
         symbol,
-        asset_type: symbolPositions[0].asset_type,
+        asset_type: positionsArray[0].asset_type,
         total_quantity: totalQuantity,
         average_price: averagePrice,
         total_cost: totalCost,
         first_purchase_date: sortedByDate[0].purchase_date,
         last_purchase_date: sortedByDate[sortedByDate.length - 1].purchase_date,
-        purchase_count: symbolPositions.length
+        purchase_count: positionsArray.length
       }
     })
 

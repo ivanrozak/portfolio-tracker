@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
-import { getCurrentPrice } from '@/lib/yahoo-finance'
 
 export async function GET() {
   try {

@@ -39,7 +39,7 @@ export async function GET() {
     const priceMap = marketPrices.reduce((acc, price) => {
       acc[price.symbol] = price
       return acc
-    }, {} as Record<string, any>)
+    }, {} as Record<string, { price: number; currency: string }>)
 
     // Enrich positions with current prices and USD equivalents
     const enrichedPositions = await Promise.all(

@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useCallback } from 'react'
 import { AggregatedPosition, MarketPrice } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -21,27 +20,7 @@ export default function AggregatedPositionsList({ refreshTrigger }: AggregatedPo
   const [pricesLoading, setPricesLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const fetchAggregatedPositions = async () => {
-    try {
-      const response = await fetch('/api/positions/aggregated')
-      if (!response.ok) {
-        throw new Error('Failed to fetch aggregated positions')
-      }
-      const data = await response.json()
-      setPositions(data.aggregatedPositions || [])
-      
-      // Fetch current prices for all symbols
-      if (data.aggregatedPositions && data.aggregatedPositions.length > 0) {
-        fetchPrices(data.aggregatedPositions.map((p: AggregatedPosition) => p.symbol))
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch positions')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const fetchPrices = async (symbols: string[]) => {
+  const fetchPrices = useCallback(async (symbols: string[]) => {
     if (symbols.length === 0) return
     
     setPricesLoading(true)
@@ -60,11 +39,32 @@ export default function AggregatedPositionsList({ refreshTrigger }: AggregatedPo
     } finally {
       setPricesLoading(false)
     }
-  }
+  }, [])
+
+  const fetchAggregatedPositions = useCallback(async () => {
+    try {
+      const response = await fetch('/api/positions/aggregated')
+      if (!response.ok) {
+        throw new Error('Failed to fetch aggregated positions')
+      }
+      const data = await response.json()
+      setPositions(data.aggregatedPositions || [])
+      
+      // Fetch current prices for all symbols
+      if (data.aggregatedPositions && data.aggregatedPositions.length > 0) {
+        fetchPrices(data.aggregatedPositions.map((p: AggregatedPosition) => p.symbol))
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch positions')
+    } finally {
+      setLoading(false)
+    }
+  }, [fetchPrices])
+
 
   useEffect(() => {
     fetchAggregatedPositions()
-  }, [refreshTrigger])
+  }, [refreshTrigger, fetchAggregatedPositions])
 
   const refreshPrices = () => {
     const symbols = positions.map(p => p.symbol)

@@ -1,10 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { CurrentPosition, Transaction, PortfolioSummary as PortfolioSummaryType } from '@/types'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { TrendingUp, TrendingDown, DollarSign, PieChart, Target, Award } from 'lucide-react'
-import { formatCurrency } from '@/lib/currency'
+import { CurrentPosition, PortfolioSummary as PortfolioSummaryType } from '@/types'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { TrendingUp, TrendingDown, DollarSign, Target, Award } from 'lucide-react'
 
 interface PortfolioSummaryProps {
   refreshTrigger?: number

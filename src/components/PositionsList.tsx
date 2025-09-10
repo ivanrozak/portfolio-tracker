@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Position, MarketPrice } from '@/types'
 import { Button } from '@/components/ui/button'
@@ -21,27 +21,7 @@ export default function PositionsList({ refreshTrigger }: PositionsListProps) {
   const [error, setError] = useState('')
   const router = useRouter()
 
-  const fetchPositions = async () => {
-    try {
-      const response = await fetch('/api/positions')
-      if (!response.ok) {
-        throw new Error('Failed to fetch positions')
-      }
-      const data = await response.json()
-      setPositions(data.positions || [])
-      
-      // Fetch current prices for all symbols
-      if (data.positions && data.positions.length > 0) {
-        fetchPrices(data.positions.map((p: Position) => p.symbol))
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch positions')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const fetchPrices = async (symbols: string[]) => {
+  const fetchPrices = useCallback(async (symbols: string[]) => {
     if (symbols.length === 0) return
     
     setPricesLoading(true)
@@ -60,7 +40,28 @@ export default function PositionsList({ refreshTrigger }: PositionsListProps) {
     } finally {
       setPricesLoading(false)
     }
-  }
+  }, [])
+
+  const fetchPositions = useCallback(async () => {
+    try {
+      const response = await fetch('/api/positions')
+      if (!response.ok) {
+        throw new Error('Failed to fetch positions')
+      }
+      const data = await response.json()
+      setPositions(data.positions || [])
+      
+      // Fetch current prices for all symbols
+      if (data.positions && data.positions.length > 0) {
+        fetchPrices(data.positions.map((p: Position) => p.symbol))
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch positions')
+    } finally {
+      setLoading(false)
+    }
+  }, [fetchPrices])
+
 
   const deletePosition = async (id: string) => {
     if (!confirm('Are you sure you want to delete this position?')) return
@@ -83,7 +84,7 @@ export default function PositionsList({ refreshTrigger }: PositionsListProps) {
 
   useEffect(() => {
     fetchPositions()
-  }, [refreshTrigger])
+  }, [refreshTrigger, fetchPositions])
 
   const refreshPrices = () => {
     const symbols = positions.map(p => p.symbol)
