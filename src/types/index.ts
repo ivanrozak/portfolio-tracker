@@ -31,4 +31,18 @@ export interface MarketPrice {
   price: number;
   change: number;
   changePercent: number;
+  currency: string;
+}
+
+export interface AggregatedPosition {
+  symbol: string;
+  asset_type: 'stock' | 'crypto';
+  total_quantity: number;
+  average_price: number;
+  total_cost: number;
+  first_purchase_date: string;
+  last_purchase_date: string;
+  purchase_count: number;
+  current_price?: number;
+  currency?: string;
 }

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import PortfolioSummary from '@/components/PortfolioSummary'
 import AddPosition from '@/components/AddPosition'
 import PositionsList from '@/components/PositionsList'
+import AggregatedPositionsList from '@/components/AggregatedPositionsList'
 import PortfolioChart from '@/components/PortfolioChart'
 import AIAnalysis from '@/components/AIAnalysis'
 import { LogOut, Plus } from 'lucide-react'
@@ -14,6 +15,7 @@ import { LogOut, Plus } from 'lucide-react'
 export default function Dashboard() {
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [showAddPosition, setShowAddPosition] = useState(false)
+  const [showAggregated, setShowAggregated] = useState(true)
   const router = useRouter()
   const supabase = createClient()
 
@@ -38,6 +40,20 @@ export default function Dashboard() {
               <p className="text-gray-600">Track your investments and get AI-powered insights</p>
             </div>
             <div className="flex items-center gap-4">
+              <Button
+                variant={showAggregated ? "default" : "outline"}
+                onClick={() => setShowAggregated(true)}
+                size="sm"
+              >
+                Aggregated View
+              </Button>
+              <Button
+                variant={!showAggregated ? "default" : "outline"}
+                onClick={() => setShowAggregated(false)}
+                size="sm"
+              >
+                Individual Trades
+              </Button>
               <Button
                 onClick={() => setShowAddPosition(!showAddPosition)}
                 className="flex items-center gap-2"
@@ -67,7 +83,11 @@ export default function Dashboard() {
         <PortfolioChart refreshTrigger={refreshTrigger} />
 
         {/* Positions List */}
-        <PositionsList refreshTrigger={refreshTrigger} />
+        {showAggregated ? (
+          <AggregatedPositionsList refreshTrigger={refreshTrigger} />
+        ) : (
+          <PositionsList refreshTrigger={refreshTrigger} />
+        )}
 
         {/* AI Analysis Section */}
         <AIAnalysis />

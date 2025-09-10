@@ -30,7 +30,8 @@ export async function getCurrentPrice(symbol: string): Promise<MarketPrice | nul
       symbol: symbol.toUpperCase(),
       price,
       change,
-      changePercent
+      changePercent,
+      currency: meta.currency || 'USD'
     }
   } catch (error) {
     console.error(`Error fetching price for ${symbol}:`, error)

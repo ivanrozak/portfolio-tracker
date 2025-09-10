@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Position, MarketPrice, PortfolioSummary as PortfolioSummaryType } from '@/types'
+import { AggregatedPosition, MarketPrice, PortfolioSummary as PortfolioSummaryType } from '@/types'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { TrendingUp, TrendingDown, DollarSign, PieChart } from 'lucide-react'
+import { formatCurrency } from '@/lib/currency'
 
 interface PortfolioSummaryProps {
   refreshTrigger?: number
@@ -19,12 +20,12 @@ export default function PortfolioSummary({ refreshTrigger }: PortfolioSummaryPro
 
   const fetchPortfolioData = async () => {
     try {
-      // Fetch positions
-      const positionsResponse = await fetch('/api/positions')
+      // Fetch aggregated positions
+      const positionsResponse = await fetch('/api/positions/aggregated')
       if (!positionsResponse.ok) return
       
       const positionsData = await positionsResponse.json()
-      const positions: Position[] = positionsData.positions || []
+      const positions: AggregatedPosition[] = positionsData.aggregatedPositions || []
       
       if (positions.length === 0) {
         setSummary({
@@ -49,14 +50,14 @@ export default function PortfolioSummary({ refreshTrigger }: PortfolioSummaryPro
         })
       }
 
-      // Calculate summary
+      // Calculate summary with currency conversion (simplified - assume same base currency for now)
       let totalValue = 0
       let totalCost = 0
 
       positions.forEach(position => {
         const currentPrice = prices[position.symbol]?.price || 0
-        totalValue += currentPrice * position.quantity
-        totalCost += position.purchase_price * position.quantity
+        totalValue += currentPrice * position.total_quantity
+        totalCost += position.total_cost
       })
 
       const totalPnL = totalValue - totalCost
