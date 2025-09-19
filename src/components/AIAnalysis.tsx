@@ -14,7 +14,7 @@ export default function AIAnalysis() {
   const [copied, setCopied] = useState(false)
   const [analysisId, setAnalysisId] = useState<string | null>(null)
 
-  const generatePortfolioPrompt = async () => {
+  const generatePortfolioPrompt = async (useIndonesian = false) => {
     setLoading(true)
     try {
       const response = await fetch('/api/ai/prompt', {
@@ -22,7 +22,7 @@ export default function AIAnalysis() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ type: 'portfolio' }),
+        body: JSON.stringify({ type: 'portfolio', useIndonesian }),
       })
 
       if (!response.ok) {
@@ -102,14 +102,23 @@ export default function AIAnalysis() {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex gap-2">
-          <Button 
-            onClick={generatePortfolioPrompt}
+        <div className="flex gap-2 flex-wrap">
+          <Button
+            onClick={() => generatePortfolioPrompt(false)}
             disabled={loading}
             className="flex items-center gap-2"
           >
             <MessageSquare className="h-4 w-4" />
             {loading ? 'Generating...' : 'Generate Portfolio Analysis Prompt'}
+          </Button>
+          <Button
+            onClick={() => generatePortfolioPrompt(true)}
+            disabled={loading}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <MessageSquare className="h-4 w-4" />
+            {loading ? 'Generating...' : 'Generate Indonesian Bulk Report'}
           </Button>
         </div>
 

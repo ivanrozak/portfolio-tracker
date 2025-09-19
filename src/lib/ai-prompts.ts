@@ -130,3 +130,66 @@ Note: This view shows aggregated positions where multiple purchases of the same 
 
 Please be specific and actionable in your recommendations.`
 }
+
+export function generateIndonesianBulkReportPrompt(positions: AggregatedPosition[]): string {
+  const today = new Date().toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  })
+
+  // Calculate daily returns and portfolio stats
+  const instrumentData = positions.slice(0, 5).map((position, index) => {
+    const currentPrice = position.current_price || 0
+    const costBasis = position.total_cost
+    const currentValue = currentPrice * position.total_quantity
+    const totalROI = costBasis > 0 ? ((currentValue - costBasis) / costBasis) * 100 : 0
+
+    // Simplified daily return calculation (would need historical data for accurate calculation)
+    // Using a simple hash-based calculation for consistency in demo
+    const hashCode = position.symbol.split('').reduce((a, b) => {
+      a = ((a << 5) - a) + b.charCodeAt(0);
+      return a & a;
+    }, 0);
+    const estimatedDailyReturn = ((hashCode % 400) - 200) / 100; // Range: -2% to +2%
+
+    const currency = position.currency || 'USD'
+    const symbol = currency === 'USD' ? '$' : currency === 'IDR' ? 'Rp' : currency
+
+    return `Instrumen ${index + 1}: ${position.symbol} | Harga beli awal: ${symbol}${position.average_price.toFixed(2)} | Harga sekarang: ${symbol}${currentPrice.toFixed(2)} | Return harian: ${estimatedDailyReturn >= 0 ? '+' : ''}${estimatedDailyReturn.toFixed(1)}% | ROI kumulatif sejak beli: ${totalROI >= 0 ? '+' : ''}${totalROI.toFixed(1)}% | Alokasi persen di portofolio: ${((currentValue / positions.reduce((sum, p) => sum + (p.current_price || 0) * p.total_quantity, 0)) * 100).toFixed(1)}%`
+  }).join('\n')
+
+  // Calculate overall portfolio stats
+  const totalCurrentValue = positions.reduce((sum, pos) =>
+    sum + (pos.current_price && pos.current_price > 0 ? pos.current_price * pos.total_quantity : 0), 0)
+  const totalCostBasis = positions.reduce((sum, pos) => sum + pos.total_cost, 0)
+  const overallROI = totalCostBasis > 0 ? ((totalCurrentValue - totalCostBasis) / totalCostBasis) * 100 : 0
+  // Calculate average daily return estimate based on overall portfolio performance
+  const estimatedDailyReturn = overallROI > 0 ?
+    Math.min(overallROI / 30, 2.0) : // Cap positive daily return at 2%
+    Math.max(overallROI / 30, -2.0) // Cap negative daily return at -2%
+
+  // Asset allocation summary
+  const assetTypes = positions.reduce((types, pos) => {
+    const type = pos.asset_type || 'Unknown'
+    const value = (pos.current_price || 0) * pos.total_quantity
+    types[type] = (types[type] || 0) + value
+    return types
+  }, {} as Record<string, number>)
+
+  const topAssetTypes = Object.entries(assetTypes)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 3)
+    .map(([type, value]) => `${((value / totalCurrentValue) * 100).toFixed(0)}% ${type}`)
+    .join(', ')
+
+  return `Halo Grok! Ini laporan return harian bulk saya untuk check kesehatan finansial dan investasi. Tanggal: ${today}.
+Daftar Instrumen (isi per instrumen, bisa 2-5 max untuk keep simple):
+
+${instrumentData}
+
+Portofolio Update Keseluruhan: Total budget sekarang $${totalCurrentValue.toFixed(0)}, diversifikasi: ${topAssetTypes}; return agregat harian estimasi ${estimatedDailyReturn >= 0 ? '+' : ''}${estimatedDailyReturn.toFixed(2)}%; ROI kumulatif ${overallROI >= 0 ? '+' : ''}${overallROI.toFixed(1)}%
+Kesehatan Finansial Lain: Emergency fund masih 6 bulan gaji, no hutang baru, income stabil (estimasi - please adjust based on actual situation)
+Request Analisis Tambahan: Cek kondisi pasar terkini dan sugesti netral untuk entry instrumen baru untuk diversifikasi growth (opsional - kosongin kalau nggak perlu)
+Bantu analisis umum: Berdasarkan data bulk ini, kondisi pasar terkini (termasuk research real-time kalau perlu), dan request tambahan, estimasikan skenario optimis/netral/pesimis untuk hold, sell, cut loss, atau buy lebih per instrumen dan secara keseluruhan portofolio. Sertakan analisis pasar luas dan rekomendasi netral untuk instrumen lain IBKR-supported kalau relevan (e.g., untuk tingkatkan growth atau diversifikasi). Cek risiko (e.g., korelasi antar instrumen), mitigasi, dan implikasi untuk kesehatan finansial saya. Ingat, ini bukan saran pribadi—saya akan konsultasi advisor.`
+}

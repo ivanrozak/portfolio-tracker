@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
-import { generatePortfolioAnalysisPrompt, generateAggregatedPortfolioAnalysisPrompt, generateStockAnalysisPrompt } from '@/lib/ai-prompts'
+import { generatePortfolioAnalysisPrompt, generateAggregatedPortfolioAnalysisPrompt, generateStockAnalysisPrompt, generateIndonesianBulkReportPrompt } from '@/lib/ai-prompts'
 import { getMultiplePrices } from '@/lib/yahoo-finance'
 import { Position } from '@/types'
 
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { type, symbol, currentPrice, useAggregated = true } = body
+    const { type, symbol, currentPrice, useAggregated = true, useIndonesian = false } = body
 
     let prompt = ''
     let analysisType = ''
@@ -96,8 +96,13 @@ export async function POST(request: NextRequest) {
           currency: currencyMap[position.symbol] || 'USD'
         }))
 
-        prompt = generateAggregatedPortfolioAnalysisPrompt(enrichedAggregatedPositions)
-        analysisType = 'aggregated_portfolio_analysis'
+        if (useIndonesian) {
+          prompt = generateIndonesianBulkReportPrompt(enrichedAggregatedPositions)
+          analysisType = 'indonesian_bulk_report'
+        } else {
+          prompt = generateAggregatedPortfolioAnalysisPrompt(enrichedAggregatedPositions)
+          analysisType = 'aggregated_portfolio_analysis'
+        }
       } else {
         // Original individual positions logic
         const { data: positions, error } = await supabase
