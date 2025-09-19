@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
-import { generatePortfolioAnalysisPrompt, generateAggregatedPortfolioAnalysisPrompt, generateStockAnalysisPrompt, generateIndonesianBulkReportPrompt } from '@/lib/ai-prompts'
+import { generatePortfolioAnalysisPrompt, generateAggregatedPortfolioAnalysisPrompt, generateStockAnalysisPrompt, generateIndonesianBulkReportPrompt, generatePortfolioResumeOnly } from '@/lib/ai-prompts'
 import { getMultiplePrices } from '@/lib/yahoo-finance'
 import { Position } from '@/types'
 
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { type, symbol, currentPrice, useAggregated = true, useIndonesian = false } = body
+    const { type, symbol, currentPrice, useAggregated = true, useIndonesian = false, resumeOnly = false } = body
 
     let prompt = ''
     let analysisType = ''
@@ -96,7 +96,10 @@ export async function POST(request: NextRequest) {
           currency: currencyMap[position.symbol] || 'USD'
         }))
 
-        if (useIndonesian) {
+        if (resumeOnly) {
+          prompt = generatePortfolioResumeOnly(enrichedAggregatedPositions)
+          analysisType = 'portfolio_resume_only'
+        } else if (useIndonesian) {
           prompt = generateIndonesianBulkReportPrompt(enrichedAggregatedPositions)
           analysisType = 'indonesian_bulk_report'
         } else {

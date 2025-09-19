@@ -14,7 +14,7 @@ export default function AIAnalysis() {
   const [copied, setCopied] = useState(false)
   const [analysisId, setAnalysisId] = useState<string | null>(null)
 
-  const generatePortfolioPrompt = async (useIndonesian = false) => {
+  const generatePortfolioPrompt = async (useIndonesian = false, resumeOnly = false) => {
     setLoading(true)
     try {
       const response = await fetch('/api/ai/prompt', {
@@ -22,7 +22,7 @@ export default function AIAnalysis() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ type: 'portfolio', useIndonesian }),
+        body: JSON.stringify({ type: 'portfolio', useIndonesian, resumeOnly }),
       })
 
       if (!response.ok) {
@@ -104,7 +104,7 @@ export default function AIAnalysis() {
       <CardContent className="space-y-4">
         <div className="flex gap-2 flex-wrap">
           <Button
-            onClick={() => generatePortfolioPrompt(false)}
+            onClick={() => generatePortfolioPrompt(false, false)}
             disabled={loading}
             className="flex items-center gap-2"
           >
@@ -112,13 +112,22 @@ export default function AIAnalysis() {
             {loading ? 'Generating...' : 'Generate Portfolio Analysis Prompt'}
           </Button>
           <Button
-            onClick={() => generatePortfolioPrompt(true)}
+            onClick={() => generatePortfolioPrompt(true, false)}
             disabled={loading}
             variant="outline"
             className="flex items-center gap-2"
           >
             <MessageSquare className="h-4 w-4" />
             {loading ? 'Generating...' : 'Generate Indonesian Bulk Report'}
+          </Button>
+          <Button
+            onClick={() => generatePortfolioPrompt(false, true)}
+            disabled={loading}
+            variant="secondary"
+            className="flex items-center gap-2"
+          >
+            <MessageSquare className="h-4 w-4" />
+            {loading ? 'Generating...' : 'Portfolio Resume Only'}
           </Button>
         </div>
 
