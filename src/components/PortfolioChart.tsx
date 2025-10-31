@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { CurrentPosition, Transaction } from '@/types'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts'
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, Legend } from 'recharts'
 import { formatCurrency } from '@/lib/currency'
 
 interface PortfolioChartProps {
@@ -136,29 +136,62 @@ export default function PortfolioChart({ refreshTrigger }: PortfolioChartProps) 
     .filter(item => item.marketValue > 0)
     .sort((a, b) => b.pnlPercent - a.pnlPercent)
 
-  // Prepare timeline data for transaction history
-  const timelineData = transactions
-    .sort((a, b) => new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime())
-    .reduce((acc, transaction) => {
-      const date = transaction.transaction_date
-      const existingEntry = acc.find(entry => entry.date === date)
-      
-      if (existingEntry) {
-        if (transaction.transaction_type === 'buy') {
-          existingEntry.invested += transaction.quantity * transaction.price
-        } else {
-          existingEntry.realized += transaction.realized_pnl || 0
-        }
-      } else {
-        acc.push({
-          date,
-          invested: transaction.transaction_type === 'buy' ? transaction.quantity * transaction.price : 0,
-          realized: transaction.transaction_type === 'sell' ? (transaction.realized_pnl || 0) : 0
-        })
-      }
-      
-      return acc
-    }, [] as Array<{ date: string; invested: number; realized: number }>)
+  // Prepare timeline data - show cumulative values over time
+  const sortedTransactions = transactions.sort((a, b) =>
+    new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime()
+  )
+
+  let cumulativeInvested = 0
+  let cumulativeRealized = 0
+  const cumulativeShares: Record<string, number> = {}
+
+  const timelineData = sortedTransactions.map((transaction, index) => {
+    // Track cumulative investment (money put in)
+    if (transaction.transaction_type === 'buy') {
+      cumulativeInvested += transaction.quantity * transaction.price
+    }
+
+    // Track cumulative realized P&L (profit/loss from sells)
+    if (transaction.transaction_type === 'sell') {
+      cumulativeRealized += transaction.realized_pnl || 0
+    }
+
+    // Track shares owned over time (for portfolio value calculation)
+    if (!cumulativeShares[transaction.symbol]) {
+      cumulativeShares[transaction.symbol] = 0
+    }
+    if (transaction.transaction_type === 'buy') {
+      cumulativeShares[transaction.symbol] += transaction.quantity
+    } else {
+      cumulativeShares[transaction.symbol] -= transaction.quantity
+    }
+
+    return {
+      date: transaction.transaction_date,
+      dateLabel: new Date(transaction.transaction_date).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: new Date(transaction.transaction_date).getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+      }),
+      cumulativeInvested,
+      cumulativeRealized,
+      netInvested: cumulativeInvested - Math.abs(cumulativeRealized < 0 ? cumulativeRealized : 0), // Net money in the market
+      transactionType: transaction.transaction_type,
+      symbol: transaction.symbol,
+      index
+    }
+  })
+
+  // Remove duplicate dates, keeping the last entry for each date
+  const uniqueTimelineData = timelineData.reduce((acc, current) => {
+    const existingIndex = acc.findIndex(item => item.date === current.date)
+    if (existingIndex >= 0) {
+      acc[existingIndex] = current // Replace with latest data for that date
+    } else {
+      acc.push(current)
+    }
+    return acc
+  }, [] as typeof timelineData)
 
   const totalPortfolioValue = allocationData.reduce((sum, item) => sum + item.value, 0)
 
@@ -242,37 +275,97 @@ export default function PortfolioChart({ refreshTrigger }: PortfolioChartProps) 
       
       case 'timeline':
         return (
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={timelineData} margin={{ top: 5, right: 30, left: 20, bottom: 50 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="date" 
+          <ResponsiveContainer width="100%" height={350}>
+            <LineChart data={uniqueTimelineData} margin={{ top: 5, right: 30, left: 60, bottom: 60 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+              <XAxis
+                dataKey="dateLabel"
                 angle={-45}
                 textAnchor="end"
                 height={80}
+                tick={{ fontSize: 12 }}
+                stroke="#666"
               />
-              <YAxis 
-                label={{ value: 'Amount (USD)', angle: -90, position: 'insideLeft' }}
+              <YAxis
+                tick={{ fontSize: 12 }}
+                stroke="#666"
+                tickFormatter={(value) => {
+                  // Format large numbers with K, M suffix
+                  if (Math.abs(value) >= 1000000) {
+                    return `$${(value / 1000000).toFixed(1)}M`
+                  }
+                  if (Math.abs(value) >= 1000) {
+                    return `$${(value / 1000).toFixed(0)}K`
+                  }
+                  return `$${value.toFixed(0)}`
+                }}
+                label={{
+                  value: 'Amount (USD)',
+                  angle: -90,
+                  position: 'insideLeft',
+                  style: { fontSize: 12, fill: '#666' }
+                }}
               />
-              <Tooltip 
-                formatter={(value: number, name: string) => [
-                  `$${value.toFixed(2)}`,
-                  name === 'invested' ? 'Invested' : 'Realized P&L'
-                ]}
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                  border: '1px solid #ccc',
+                  borderRadius: '8px',
+                  padding: '12px'
+                }}
+                formatter={(value: number, name: string) => {
+                  const formattedValue = value.toLocaleString('en-US', {
+                    style: 'currency',
+                    currency: 'USD',
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                  })
+
+                  if (name === 'cumulativeInvested') return [formattedValue, 'Total Invested']
+                  if (name === 'cumulativeRealized') return [formattedValue, 'Total Realized P&L']
+                  if (name === 'netInvested') return [formattedValue, 'Net Capital in Market']
+
+                  return [formattedValue, name]
+                }}
+                labelFormatter={(label) => `Date: ${label}`}
               />
-              <Line 
-                type="monotone" 
-                dataKey="invested" 
-                stroke="#0088FE" 
-                name="invested"
+              <Legend
+                wrapperStyle={{ paddingTop: '20px' }}
+                iconType="line"
+                formatter={(value) => {
+                  if (value === 'cumulativeInvested') return 'Total Invested'
+                  if (value === 'cumulativeRealized') return 'Realized P&L'
+                  if (value === 'netInvested') return 'Net Capital'
+                  return value
+                }}
+              />
+              <Line
+                type="monotone"
+                dataKey="cumulativeInvested"
+                stroke="#0088FE"
+                name="cumulativeInvested"
+                strokeWidth={2.5}
+                dot={{ r: 4, fill: '#0088FE' }}
+                activeDot={{ r: 6 }}
+              />
+              <Line
+                type="monotone"
+                dataKey="cumulativeRealized"
+                stroke="#00C49F"
+                name="cumulativeRealized"
+                strokeWidth={2.5}
+                dot={{ r: 4, fill: '#00C49F' }}
+                activeDot={{ r: 6 }}
+              />
+              <Line
+                type="monotone"
+                dataKey="netInvested"
+                stroke="#FF8042"
+                name="netInvested"
                 strokeWidth={2}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="realized" 
-                stroke="#00C49F" 
-                name="realized"
-                strokeWidth={2}
+                strokeDasharray="5 5"
+                dot={{ r: 3, fill: '#FF8042' }}
+                activeDot={{ r: 5 }}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -292,7 +385,7 @@ export default function PortfolioChart({ refreshTrigger }: PortfolioChartProps) 
             <CardDescription className="text-xs sm:text-sm">
               {chartType === 'allocation' && 'Distribution by current market value (USD)'}
               {chartType === 'performance' && 'Profit/Loss percentage by position (USD)'}
-              {chartType === 'timeline' && 'Investment and realized gains over time (USD)'}
+              {chartType === 'timeline' && 'Cumulative investment, realized gains, and net capital over time (USD)'}
             </CardDescription>
           </div>
           <div className="flex gap-1 sm:gap-2 flex-wrap">
