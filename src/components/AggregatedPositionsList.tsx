@@ -110,7 +110,7 @@ export default function AggregatedPositionsList({ refreshTrigger }: AggregatedPo
             <CardTitle>Your Portfolio (Aggregated View)</CardTitle>
             <CardDescription className="flex items-center gap-2">
               <Info className="h-4 w-4" />
-              Multiple purchases of the same symbol are combined with average cost
+              All transactions for the same symbol combined with weighted average cost
             </CardDescription>
           </div>
           <Button 
@@ -134,19 +134,21 @@ export default function AggregatedPositionsList({ refreshTrigger }: AggregatedPo
               <TableHead>Avg Cost</TableHead>
               <TableHead>Current Price</TableHead>
               <TableHead>Market Value</TableHead>
-              <TableHead>P&L</TableHead>
-              <TableHead>Purchases</TableHead>
+              <TableHead>Unrealized P&L</TableHead>
+              <TableHead>Realized P&L</TableHead>
+              <TableHead>Transactions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {positions.map((position) => {
               const marketPrice = prices[position.symbol]
               const currentPrice = marketPrice?.price || 0
-              const currency = marketPrice?.currency || 'USD'
+              const currency = position.currency || marketPrice?.currency || 'USD'
               const marketValue = currentPrice * position.total_quantity
               const costBasis = position.total_cost
-              const pnl = marketValue - costBasis
-              const pnlPercent = costBasis > 0 ? (pnl / costBasis) * 100 : 0
+              const unrealizedPnl = marketValue - costBasis
+              const realizedPnl = position.total_realized_pnl || 0
+              const pnlPercent = costBasis > 0 ? (unrealizedPnl / costBasis) * 100 : 0
 
               return (
                 <TableRow key={position.symbol}>
@@ -184,19 +186,24 @@ export default function AggregatedPositionsList({ refreshTrigger }: AggregatedPo
                   </TableCell>
                   <TableCell>
                     {marketValue > 0 ? (
-                      <div className={`flex flex-col ${pnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        <span>{pnl >= 0 ? '+' : ''}{formatCurrency(Math.abs(pnl), currency)}</span>
-                        <span className="text-xs">({pnl >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%)</span>
+                      <div className={`flex flex-col ${unrealizedPnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        <span>{unrealizedPnl >= 0 ? '+' : ''}{formatCurrency(Math.abs(unrealizedPnl), currency)}</span>
+                        <span className="text-xs">({unrealizedPnl >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%)</span>
                       </div>
                     ) : (
                       <span className="text-gray-400">-</span>
                     )}
                   </TableCell>
                   <TableCell>
+                    <div className={`flex flex-col ${realizedPnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <span>{realizedPnl >= 0 ? '+' : ''}{formatCurrency(Math.abs(realizedPnl), currency)}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
                     <div className="text-sm">
-                      <div>{position.purchase_count} purchase{position.purchase_count > 1 ? 's' : ''}</div>
+                      <div>{position.purchase_count} transaction{position.purchase_count > 1 ? 's' : ''}</div>
                       <div className="text-xs text-gray-500">
-                        {position.first_purchase_date === position.last_purchase_date 
+                        {position.first_purchase_date === position.last_purchase_date
                           ? position.first_purchase_date
                           : `${position.first_purchase_date} - ${position.last_purchase_date}`
                         }

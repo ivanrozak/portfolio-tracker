@@ -23,61 +23,26 @@ export async function POST(request: NextRequest) {
 
     if (type === 'portfolio') {
       if (useAggregated) {
-        // Fetch and aggregate positions directly
-        const { data: positions, error } = await supabase
-          .from('positions')
+        // Use the aggregated positions API endpoint (no duplicate logic)
+        const { data: aggregatedPositions, error } = await supabase
+          .from('current_positions')
           .select('*')
           .eq('user_id', user.id)
-          .order('purchase_date', { ascending: true })
+          .order('last_transaction_date', { ascending: false })
 
         if (error) {
-          console.error('Error fetching positions:', error)
+          console.error('Error fetching aggregated positions:', error)
           return NextResponse.json({ error: 'Failed to fetch positions' }, { status: 500 })
         }
 
-        if (!positions || positions.length === 0) {
-          return NextResponse.json({ error: 'No positions found' }, { status: 400 })
-        }
-
-        // Group and aggregate positions
-        const symbolGroups = positions.reduce((groups: Record<string, Position[]>, position: Position) => {
-          if (!groups[position.symbol]) {
-            groups[position.symbol] = []
-          }
-          groups[position.symbol].push(position)
-          return groups
-        }, {})
-
-        const aggregatedPositions = Object.entries(symbolGroups).map(([symbol, symbolPositions]) => {
-          const positionsArray = symbolPositions as Position[]
-          const totalQuantity = positionsArray.reduce((sum, pos) => sum + pos.quantity, 0)
-          const totalCost = positionsArray.reduce((sum, pos) => sum + (pos.quantity * pos.purchase_price), 0)
-          const averagePrice = totalCost / totalQuantity
-          
-          const sortedByDate = positionsArray.sort((a, b) => 
-            new Date(a.purchase_date).getTime() - new Date(b.purchase_date).getTime()
-          )
-          
-          return {
-            symbol,
-            asset_type: positionsArray[0].asset_type,
-            total_quantity: totalQuantity,
-            average_price: averagePrice,
-            total_cost: totalCost,
-            first_purchase_date: sortedByDate[0].purchase_date,
-            last_purchase_date: sortedByDate[sortedByDate.length - 1].purchase_date,
-            purchase_count: positionsArray.length
-          }
-        })
-
-        if (aggregatedPositions.length === 0) {
+        if (!aggregatedPositions || aggregatedPositions.length === 0) {
           return NextResponse.json({ error: 'No positions found' }, { status: 400 })
         }
 
         // Fetch current market prices
         const symbols = aggregatedPositions.map((p: { symbol: string }) => p.symbol)
         const marketPrices = await getMultiplePrices(symbols)
-        
+
         // Create maps for price and currency
         const priceMap = marketPrices.reduce((acc, price) => {
           acc[price.symbol] = price.price
@@ -89,11 +54,19 @@ export async function POST(request: NextRequest) {
           return acc
         }, {} as Record<string, string>)
 
-        // Enrich aggregated positions with current prices and currency
-        const enrichedAggregatedPositions = aggregatedPositions.map((position: typeof aggregatedPositions[0]) => ({
-          ...position,
+        // Map current_positions to AggregatedPosition format for AI prompts
+        const enrichedAggregatedPositions = aggregatedPositions.map(position => ({
+          symbol: position.symbol,
+          asset_type: position.asset_type,
+          total_quantity: position.current_quantity,
+          average_price: position.average_cost,
+          total_cost: position.total_cost_basis,
+          first_purchase_date: position.first_purchase_date,
+          last_purchase_date: position.last_transaction_date,
+          purchase_count: position.transaction_count,
           current_price: priceMap[position.symbol] || undefined,
-          currency: currencyMap[position.symbol] || 'USD'
+          currency: position.currency || currencyMap[position.symbol] || 'USD',
+          total_realized_pnl: position.total_realized_pnl
         }))
 
         if (resumeOnly) {

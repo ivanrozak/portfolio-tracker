@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import PortfolioSummary from '@/components/PortfolioSummary'
-import PositionsList from '@/components/PositionsList'
 import AggregatedPositionsList from '@/components/AggregatedPositionsList'
 import TransactionForm from '@/components/TransactionForm'
 import CurrentPositionsList from '@/components/CurrentPositionsList'
+import TransactionHistoryList from '@/components/TransactionHistoryList'
 import PortfolioChart from '@/components/PortfolioChart'
 import AIAnalysis from '@/components/AIAnalysis'
 import ExchangeRateDisplay from '@/components/ExchangeRateDisplay'
@@ -17,7 +17,7 @@ import { LogOut, Plus } from 'lucide-react'
 export default function Dashboard() {
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [showAddTransaction, setShowAddTransaction] = useState(false)
-  const [viewMode, setViewMode] = useState<'current' | 'aggregated' | 'individual'>('current')
+  const [viewMode, setViewMode] = useState<'current' | 'aggregated' | 'history'>('current')
   const router = useRouter()
   const supabase = createClient()
 
@@ -61,12 +61,12 @@ export default function Dashboard() {
                   Aggregated
                 </Button>
                 <Button
-                  variant={viewMode === 'individual' ? "default" : "outline"}
-                  onClick={() => setViewMode('individual')}
+                  variant={viewMode === 'history' ? "default" : "outline"}
+                  onClick={() => setViewMode('history')}
                   size="sm"
                   className="text-xs sm:text-sm"
                 >
-                  Individual
+                  History
                 </Button>
               </div>
               {/* Action Buttons */}
@@ -99,8 +99,8 @@ export default function Dashboard() {
           <TransactionForm onSuccess={handleTransactionAdded} />
         )}
 
-        {/* Charts Section */}
-        <PortfolioChart refreshTrigger={refreshTrigger} useAggregated={viewMode === 'aggregated'} />
+        {/* Charts Section - Always shows current portfolio state */}
+        <PortfolioChart refreshTrigger={refreshTrigger} />
 
         {/* Positions List */}
         {viewMode === 'current' && (
@@ -109,8 +109,8 @@ export default function Dashboard() {
         {viewMode === 'aggregated' && (
           <AggregatedPositionsList refreshTrigger={refreshTrigger} />
         )}
-        {viewMode === 'individual' && (
-          <PositionsList refreshTrigger={refreshTrigger} />
+        {viewMode === 'history' && (
+          <TransactionHistoryList refreshTrigger={refreshTrigger} />
         )}
 
         {/* Exchange Rate Display */}

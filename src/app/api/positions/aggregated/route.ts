@@ -1,77 +1,48 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
-import { Position } from '@/types'
-
-export interface AggregatedPosition {
-  symbol: string;
-  asset_type: 'stock' | 'crypto';
-  total_quantity: number;
-  average_price: number;
-  total_cost: number;
-  first_purchase_date: string;
-  last_purchase_date: string;
-  purchase_count: number;
-  current_price?: number;
-}
+import { CurrentPosition, AggregatedPosition } from '@/types'
 
 export async function GET() {
   try {
     const supabase = await createServerSupabaseClient()
-    
+
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
-    
+
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Fetch all positions for the user
-    const { data: positions, error } = await supabase
-      .from('positions')
+    // Fetch from current_positions view (already aggregated by database)
+    const { data: currentPositions, error } = await supabase
+      .from('current_positions')
       .select('*')
       .eq('user_id', user.id)
-      .order('purchase_date', { ascending: true })
+      .order('last_transaction_date', { ascending: false })
 
     if (error) {
-      console.error('Error fetching positions:', error)
+      console.error('Error fetching current positions:', error)
       return NextResponse.json({ error: 'Failed to fetch positions' }, { status: 500 })
     }
 
-    if (!positions || positions.length === 0) {
+    if (!currentPositions || currentPositions.length === 0) {
       return NextResponse.json({ aggregatedPositions: [] })
     }
 
-    // Group positions by symbol and aggregate
-    const symbolGroups = positions.reduce((groups: Record<string, Position[]>, position: Position) => {
-      if (!groups[position.symbol]) {
-        groups[position.symbol] = []
-      }
-      groups[position.symbol].push(position)
-      return groups
-    }, {})
-
-    // Calculate aggregated positions
-    const aggregatedPositions: AggregatedPosition[] = Object.entries(symbolGroups).map(([symbol, symbolPositions]) => {
-      const positionsArray = symbolPositions as Position[]
-      const totalQuantity = positionsArray.reduce((sum, pos) => sum + pos.quantity, 0)
-      const totalCost = positionsArray.reduce((sum, pos) => sum + (pos.quantity * pos.purchase_price), 0)
-      const averagePrice = totalCost / totalQuantity
-      
-      const sortedByDate = positionsArray.sort((a, b) => 
-        new Date(a.purchase_date).getTime() - new Date(b.purchase_date).getTime()
-      )
-      
-      return {
-        symbol,
-        asset_type: positionsArray[0].asset_type,
-        total_quantity: totalQuantity,
-        average_price: averagePrice,
-        total_cost: totalCost,
-        first_purchase_date: sortedByDate[0].purchase_date,
-        last_purchase_date: sortedByDate[sortedByDate.length - 1].purchase_date,
-        purchase_count: positionsArray.length
-      }
-    })
+    // Map CurrentPosition to AggregatedPosition format
+    const aggregatedPositions: AggregatedPosition[] = currentPositions.map((pos: CurrentPosition) => ({
+      symbol: pos.symbol,
+      asset_type: pos.asset_type,
+      total_quantity: pos.current_quantity,
+      average_price: pos.average_cost,
+      total_cost: pos.total_cost_basis,
+      first_purchase_date: pos.first_purchase_date,
+      last_purchase_date: pos.last_transaction_date,
+      purchase_count: pos.transaction_count,
+      currency: pos.currency,
+      total_realized_pnl: pos.total_realized_pnl,
+      current_price: pos.current_price
+    }))
 
     return NextResponse.json({ aggregatedPositions })
   } catch (error) {
